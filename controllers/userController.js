@@ -2,11 +2,28 @@ const User = require("../models/userModel");
 
 // Controller functions for CRUD operations
 exports.getAllUsers = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
   try {
-    const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const offset = (page - 1) * limit;
+    const users = await User.findAndCountAll({
+      offset,
+      limit: parseInt(limit),
+    });
+
+    const totalPages = Math.ceil(users.count / parseInt(limit));
+
+    res.json({
+      success: true,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages,
+      totalUsers: users.count,
+      users: users.rows,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
